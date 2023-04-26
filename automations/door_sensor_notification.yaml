@@ -75,7 +75,8 @@ action:
           event_data:
             action: door_sensor_{{ room_en }}_close
       - choose:
-        - conditions: '{{ wait.trigger.event.data.action == door_sensor_{{ room_en }}_close }}'
+        - conditions:
+          value_template: '{{ wait.trigger.event.data.action == door_sensor_{{ room_en }}_close }}'
           sequence:
           - service: cover.close_cover
             target:
