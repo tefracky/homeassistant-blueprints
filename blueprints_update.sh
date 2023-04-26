@@ -1,7 +1,7 @@
 #!/bin/bash
 
 self_file="$0"
-self_source_url="https://raw.githubusercontent.com/koter84/HomeAssistant_Blueprints_Update/main/blueprints_update.sh"
+self_source_url="https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/blueprints/blueprints_update.sh"
 
 # defaults
 _do_update="false"
@@ -213,10 +213,10 @@ then
 fi
 
 # find the blueprints dir
-if [ -d /config/blueprints/ ]
+if [ -d /blueprints/ ]
 then
-	cd /config/blueprints/
-elif [ -d $(dirname "$0")/../config/blueprints/ ]
+	cd /blueprints/
+elif [ -d $(dirname "$0")/../blueprints/ ]
 then
 	cd $(dirname "$0")/../config/blueprints/
 elif [ -d /usr/share/hassio/homeassistant/blueprints/ ]
