@@ -27,68 +27,70 @@ variables:
   room_en: !input 'room_en'
 
 trigger:
-  - platform: state
+  - id: door_closed
+    platform: state
     entity_id: !input door_sensor
     to: 'off'
-  - platform: state
+  - id: door_open
+    platform: state
     entity_id: !input door_sensor
     to: 'on'
     for:
       hours: 0
       minutes: 15
       seconds: 0
+  - id: notification_dismiss
+    platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: door_sensor_{{ room_en }}_dismiss
+  - id: notification_close
+    platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: door_sensor_{{ room_en }}_close
 
 action:
   - choose:
     - conditions:
-      - condition: state
-        entity_id: !input door_sensor
-        state: 'on'
-        for:
-          hours: 0
-          minutes: 15
-          seconds: 0
+        - condition: trigger
+          id:
+            - door_open
       sequence:
-      - service: notify.all_devices
-        data:
-          message: "{{ room }} ist schon länger als 15 Minuten offen"
+        - service: notify.all_devices
           data:
-            clickAction: entityId:{{ sensor }}
-            channel: Türsensor {{ room }}
-            persistent: true
-            importance: high
-            sticky: 'true'
-            actions:
-            - action: door_sensor_{{ room_en }}_dismiss
-              title: Schließen
-            - action: door_sensor_{{ room_en }}_close
-              title: Ausschalten
-            tag: Türsensor {{ room }}
-          title: Türsensor {{ room }}
-      - wait_for_trigger:
-        - platform: event
-          event_type: mobile_app_notification_action
-          event_data:
-            action: door_sensor_{{ room_en }}_dismiss
-        - platform: event
-          event_type: mobile_app_notification_action
-          event_data:
-            action: door_sensor_{{ room_en }}_close
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: "{{ wait.trigger.event.data.action == 'door_sensor_' + roomName + '_close' }}"
-          sequence:
-          - service: cover.close_cover
-            target:
-              entity_id: cover.some_cover
-          - service: input_boolean.turn_off
-            data: {}
-            target:
-              entity_id: !input door_sensor
-      - service: notify.all_devices
-        data:
-          message: clear_notification
+            message: "{{ room }} ist schon länger als 15 Minuten offen"
+            data:
+              clickAction: entityId:{{ sensor }}
+              channel: Türsensor {{ room }}
+              persistent: true
+              importance: high
+              sticky: 'true'
+              actions:
+              - action: door_sensor_{{ room_en }}_dismiss
+                title: Schließen
+              - action: door_sensor_{{ room_en }}_close
+                title: Ausschalten
+              tag: Türsensor {{ room }}
+            title: Türsensor {{ room }}
+    - conditions:
+        - condition: trigger
+          id:
+            - notification_close
+      sequence:
+        - service: input_boolean.turn_off
+          data: {}
+          target:
+            entity_id: !input door_sensor
+    - conditions:
+        - condition: trigger
+          id:
+            - notification_dismiss
+            - door_closed
+      sequence:
+        - service: notify.all_devices
           data:
-            tag: Türsensor {{ room }}
+            message: clear_notification
+            data:
+              tag: Türsensor {{ room }}
 mode: restart
