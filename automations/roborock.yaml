@@ -37,19 +37,39 @@ trigger:
     for:
       hours: 0
       minutes: 0
-      seconds: 30
+      seconds: 5
     to: cleaning
     id: started
   - platform: state
     entity_id: !input 'roborock'
     from: paused
+    to: cleaning
     id: paused
+  - platform: state
+    entity_id: !input 'roborock'
+    from: paused
+    to: cleaning
+    id: returning
+  - platform: state
+    entity_id: !input 'roborock'
+    from: idle
+    id: idle
+    to: cleaning
+  - platform: state
+    entity_id: !input 'roborock'
+    from: idle
+    id: idle
+    to: returning
 
 action:
   - choose:
       - conditions:
-          - condition: trigger
-            id: paused
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: idle
+              - condition: trigger
+                id: paused
           - condition: or
             conditions:
               - condition: state
@@ -83,7 +103,7 @@ action:
               title: Staubsauger pausiert
               message: "{{ roborock_name }} wurde pausiert"
               data:
-                clickAction: entityId:!input 'roborock'
+                clickAction: entityId:{{ roborock }}
                 actions:
                   - action: "{{ roborock_short_name }}_dock"
                     title: Dock
