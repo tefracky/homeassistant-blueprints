@@ -61,6 +61,11 @@ trigger:
     id: idle
     to: returning
 
+condition:
+  - condition: state
+    entity_id: input_boolean.vacation
+    state: "off"
+
 action:
   - choose:
       - conditions:
