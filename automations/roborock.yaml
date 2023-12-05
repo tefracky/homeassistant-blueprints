@@ -37,7 +37,7 @@ trigger:
     for:
       hours: 0
       minutes: 0
-      seconds: 5
+      seconds: 15
     to: cleaning
     id: started
   - platform: state
