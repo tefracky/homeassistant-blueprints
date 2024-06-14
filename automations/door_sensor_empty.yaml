@@ -15,29 +15,28 @@ variables:
   door_sensor: !input 'door_sensor'
 
 trigger:
-  - platform: numeric_state
-    entity_id: !input door_sensor
-    attribute: last_changed
-    value_template: >-
-      {{ (state - now() + timedelta(days=3)).total_seconds() }}
-    below: 0
-    id: Leer
-  - platform: numeric_state
-    entity_id: !input door_sensor
-    attribute: last_changed
-    value_template: >-
-      {{ (state - now() + timedelta(days=3)).total_seconds() }}
-    above: 0
-    id: Voll
+  - platform: time_pattern
+    minutes: "27"
+    hours: /1
 
 condition: []
 
 action:
   - if:
-      - condition: trigger
-        id:
-          - Leer
+      - condition: numeric_state
+        entity_id: !input door_sensor
+        attribute: last_changed
+        value_template: >-
+          {{ (state - now() + timedelta(days=3)).total_seconds() }}
+        above: 0
     then:
+      - service: notify.oli_und_tina
+        data:
+          message: clear_notification
+          data:
+            tag: >-
+              {{ state_attr(door_sensor, 'friendly_name') }}
+    else:
       - service: notify.oli_und_tina
         data:
           message: >-
@@ -52,11 +51,4 @@ action:
             persistent: true
             importance: high
             sticky: "true"
-    else:
-      - service: notify.oli_und_tina
-        data:
-          message: clear_notification
-          data:
-            tag: >-
-              {{ state_attr(door_sensor, 'friendly_name') }}
 mode: restart
