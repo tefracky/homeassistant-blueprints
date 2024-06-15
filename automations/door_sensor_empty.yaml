@@ -27,7 +27,7 @@ action:
         entity_id: !input door_sensor
         attribute: last_changed
         value_template: >-
-          {{ (state - now() + timedelta(days=3)).total_seconds() }}
+          {{ state | as_timestamp - (now() + timedelta(days=3)) | as_timestamp }}
         below: 0
     then:
       - service: notify.oli_und_tina
