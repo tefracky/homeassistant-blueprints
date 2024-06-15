@@ -25,7 +25,7 @@ action:
   - if:
       - condition: template
         value_template: >
-          {{ states[entity_id].last_updated | as_timestamp - (now() + timedelta(days=3)) | as_timestamp < 0  }}
+          {{ states[door_sensor].last_updated | as_timestamp - (now() + timedelta(days=3)) | as_timestamp < 0  }}
 
     then:
       - service: notify.oli_und_tina
