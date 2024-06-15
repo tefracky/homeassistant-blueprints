@@ -28,7 +28,7 @@ action:
         attribute: last_changed
         value_template: >-
           {{ (state - now() + timedelta(days=3)).total_seconds() }}
-        above: 0
+        below: 0
     then:
       - service: notify.oli_und_tina
         data:
