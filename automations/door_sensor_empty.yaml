@@ -23,12 +23,10 @@ condition: []
 
 action:
   - if:
-      - condition: numeric_state
-        entity_id: !input door_sensor
-        attribute: last_changed
-        value_template: >-
-          {{ state | as_timestamp - (now() + timedelta(days=3)) | as_timestamp }}
-        below: 0
+      - condition: template
+        value_template: >
+          {{ states[entity_id].last_updated | as_timestamp - (now() + timedelta(days=3)) | as_timestamp < 0  }}
+
     then:
       - service: notify.oli_und_tina
         data:
