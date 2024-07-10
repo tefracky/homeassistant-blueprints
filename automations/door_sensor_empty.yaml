@@ -32,8 +32,7 @@ action:
         data:
           message: clear_notification
           data:
-            tag: >-
-              {{ state_attr(door_sensor, 'friendly_name') }}
+            tag: "{{ state_attr(door_sensor, 'friendly_name') }} leer"
     else:
       - service: notify.oli_und_tina
         data:
@@ -42,10 +41,9 @@ action:
           title: Türsensor
           data:
             clickAction: entityId:input_boolean.door_sensor_work
-            group: Türsensor
-            channel: Türsensor
-            tag: >-
-              {{ state_attr(door_sensor, 'friendly_name') }}
+            group: Türsensor leer
+            channel: Türsensor leer
+            tag: "{{ state_attr(door_sensor, 'friendly_name') }} leer"
             persistent: true
             importance: high
             sticky: "true"
