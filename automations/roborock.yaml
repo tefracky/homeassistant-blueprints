@@ -76,7 +76,7 @@ action:
               - condition: trigger
                 id: charging
         sequence:
-          - service: notify.all_devices
+          - service: notify.oli_und_tina
             data:
               message: clear_notification
               data:
@@ -95,7 +95,7 @@ action:
             data: {}
             target:
               entity_id: !input 'roborock'
-          - service: notify.all_devices
+          - service: notify.oli_und_tina
             data:
               title: Staubsauger pausiert
               message: "{{ roborock_name }} wurde pausiert"
@@ -124,7 +124,7 @@ action:
                 event_data:
                   action: "{{ roborock_short_name + '_resume' }}"
                 id: resume
-          - service: notify.all_devices
+          - service: notify.oli_und_tina
             data:
               message: clear_notification
               data:
