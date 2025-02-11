@@ -1,8 +1,11 @@
+Danke für die Information! Hier ist der aktualisierte Blueprint mit dem zusätzlichen `source_url`-Tag:
+
+```yaml
 blueprint:
-  source_url: "https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/blueprints/automations/climate_problem.yaml"
   name: Thermostat Benachrichtigung Fehler
   description: "Benachrichtigt, wenn ein Thermostat in einem bestimmten Raum nicht verfügbar ist"
   domain: automation
+  source_url: "https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/blueprints/automations/climate_problem.yaml"
   input:
     sensor:
       name: Thermostat Sensor
@@ -21,12 +24,6 @@ blueprint:
       description: "Der Name des Raums"
       selector:
         text:
-    notify_device:
-      name: Benachrichtigungsgerät
-      description: "Das Gerät, das benachrichtigt werden soll"
-      selector:
-        device:
-          integration: mobile_app
 
 trigger:
   - platform: state
@@ -60,7 +57,7 @@ action:
               states[!input sensor ~ '_linkquality'].last_changed
               < now() - timedelta(hours=1) }}
     then:
-      - service: notify.mobile_app_!input notify_device
+      - service: notify.oli_und_tina
         data:
           message: "Heizung {{ !input room }} nicht verfügbar"
           title: "Heizung nicht verfügbar"
@@ -78,7 +75,7 @@ action:
           title: "Heizung nicht verfügbar"
           notification_id: "Heizung {{ !input room }}"
     else:
-      - service: notify.mobile_app_!input notify_device
+      - service: notify.oli_und_tina
         data:
           message: clear_notification
           data:
@@ -86,3 +83,6 @@ action:
       - service: persistent_notification.dismiss
         data:
           notification_id: "Heizung {{ !input room }}"
+```
+
+Dieser Blueprint enthält nun den `source_url`-Tag und kann für die Automatisierungen verwendet werden.
