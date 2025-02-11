@@ -1,6 +1,3 @@
-Danke für die Information! Hier ist der aktualisierte Blueprint mit dem zusätzlichen `source_url`-Tag:
-
-```yaml
 blueprint:
   name: Thermostat Benachrichtigung Fehler
   description: "Benachrichtigt, wenn ein Thermostat in einem bestimmten Raum nicht verfügbar ist"
@@ -83,6 +80,3 @@ action:
       - service: persistent_notification.dismiss
         data:
           notification_id: "Heizung {{ !input room }}"
-```
-
-Dieser Blueprint enthält nun den `source_url`-Tag und kann für die Automatisierungen verwendet werden.
