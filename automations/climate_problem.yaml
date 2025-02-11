@@ -5,8 +5,8 @@ blueprint:
   source_url: "https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/blueprints/automations/climate_problem.yaml"
   input:
     sensor:
-      name: Thermostat Sensor
-      description: "Der Sensor des Thermostats"
+      name: Thermostat Batteriesensor
+      description: "Der Batteriesensor des Thermostats"
       selector:
         entity:
           domain: sensor
@@ -80,3 +80,4 @@ action:
       - service: persistent_notification.dismiss
         data:
           notification_id: "Heizung {{ !input room }}"
+  mode: restart
