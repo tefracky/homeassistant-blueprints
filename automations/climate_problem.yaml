@@ -46,40 +46,41 @@ variables:
   sensor_linkquality: "{{ sensor_entity }}_linkquality"
 
 action:
-  - if:
-      - condition: or
-        conditions:
-          - condition: state
-            entity_id: !input sensor
-            state: unavailable
-          - condition: template
-            value_template: >-
-              {{ states[sensor_linkquality].last_changed < (now() - timedelta(hours=1)) }}
-    then:
+  - choose:
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input sensor
+                state: unavailable
+              - condition: template
+                value_template: >-
+                  {{ states[sensor_linkquality].last_changed < (now() - timedelta(hours=1)) }}
+        sequence:
+          - service: notify.oli_und_tina
+            data:
+              message: "Heizung {{ room_name }} nicht verfügbar"
+              title: "Heizung nicht verfügbar"
+              data:
+                clickAction: "entityId:{{ climate_entity }}"
+                tag: "Heizung {{ room_name }}"
+                persistent: true
+                importance: default
+                sticky: "false"
+                group: Heizung
+                channel: Heizung
+          - service: persistent_notification.create
+            data:
+              message: "Heizung {{ room_name }} nicht verfügbar"
+              title: "Heizung nicht verfügbar"
+              notification_id: "Heizung {{ room_name }}"
+    default:
       - service: notify.oli_und_tina
         data:
-          message: "Heizung {{ room_name }} nicht verfügbar"
-          title: "Heizung nicht verfügbar"
+          message: clear_notification
           data:
-            clickAction: "entityId:{{ climate_entity }}"
             tag: "Heizung {{ room_name }}"
-            persistent: true
-            importance: default
-            sticky: "false"
-            group: Heizung
-            channel: Heizung
-      - service: persistent_notification.create
+      - service: persistent_notification.dismiss
         data:
-          message: "Heizung {{ room_name }} nicht verfügbar"
-          title: "Heizung nicht verfügbar"
           notification_id: "Heizung {{ room_name }}"
-  else:
-    - service: notify.oli_und_tina
-      data:
-        message: clear_notification
-        data:
-          tag: "Heizung {{ room_name }}"
-    - service: persistent_notification.dismiss
-      data:
-        notification_id: "Heizung {{ room_name }}"
 mode: restart
