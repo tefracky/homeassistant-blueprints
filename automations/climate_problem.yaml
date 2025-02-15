@@ -2,7 +2,6 @@ blueprint:
   name: Thermostat Benachrichtigung Fehler
   description: "Benachrichtigt, wenn ein Thermostat in einem bestimmten Raum nicht verfügbar ist"
   domain: automation
-  source_url: "https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/blueprints/automations/climate_problem.yaml"
   input:
     sensor:
       name: Thermostat Batteriesensor
@@ -40,6 +39,12 @@ condition:
     entity_id: binary_sensor.heizung_zuhause_sommermodus
     state: "off"
 
+variables:
+  sensor_entity: !input sensor
+  climate_entity: !input climate
+  room_name: !input room
+  sensor_linkquality: "{{ sensor_entity }}_linkquality"
+
 action:
   - if:
       - condition: or
@@ -49,15 +54,15 @@ action:
             state: unavailable
           - condition: template
             value_template: >-
-              {{ states((!input sensor ~ '_linkquality')).last_changed < now() - timedelta(hours=1) }}
+              {{ states[sensor_linkquality].last_changed < (now() - timedelta(hours=1)) }}
     then:
       - service: notify.oli_und_tina
         data:
-          message: "Heizung {{ room }} nicht verfügbar"
+          message: "Heizung {{ room_name }} nicht verfügbar"
           title: "Heizung nicht verfügbar"
           data:
-            clickAction: "entityId:{{ climate }}"
-            tag: "Heizung {{ room }}"
+            clickAction: "entityId:{{ climate_entity }}"
+            tag: "Heizung {{ room_name }}"
             persistent: true
             importance: default
             sticky: "false"
@@ -65,16 +70,16 @@ action:
             channel: Heizung
       - service: persistent_notification.create
         data:
-          message: "Heizung {{ room }} nicht verfügbar"
+          message: "Heizung {{ room_name }} nicht verfügbar"
           title: "Heizung nicht verfügbar"
-          notification_id: "Heizung {{ room }}"
-    else:
-      - service: notify.oli_und_tina
+          notification_id: "Heizung {{ room_name }}"
+  else:
+    - service: notify.oli_und_tina
+      data:
+        message: clear_notification
         data:
-          message: clear_notification
-          data:
-            tag: "Heizung {{ room }}"
-      - service: persistent_notification.dismiss
-        data:
-          notification_id: "Heizung {{ room }}"
+          tag: "Heizung {{ room_name }}"
+    - service: persistent_notification.dismiss
+      data:
+        notification_id: "Heizung {{ room_name }}"
 mode: restart
