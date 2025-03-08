@@ -35,7 +35,7 @@ trigger:
 condition:
   - condition: template
     value_template: >-
-      {{ (now() | as_timestamp - states('sensor.hassio_uptime') | as_timestamp) > 10*60 }}
+      {{ (now() | as_timestamp - states('sensor.uptime') | as_timestamp) > 10*60 }}
   - condition: state
     entity_id: binary_sensor.heizung_zuhause_sommermodus
     state: "off"
