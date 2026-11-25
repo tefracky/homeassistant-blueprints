@@ -1,0 +1,206 @@
+blueprint:
+  source_url: "https://raw.githubusercontent.com/tefracky/homeassistant-blueprints/refs/heads/blueprints/automations/drucker-automatisch-ausschalten.yaml"
+  name: Drucker automatisch ausschalten
+  description: >
+    # 🖨️ Drucker automatisch ausschalten
+
+    **Version 1.0**
+
+
+    Für Moonraker-Drucker (Sensor „Current Print State“) an einer schaltbaren
+    Steckdose. Gemeinsame Logik für Qidi und Ender.
+
+
+    **Statusspiegel:** Jeder Druckstatus wird in einen `input_select` geschrieben
+    (Druckt, Pausiert, Abgeschlossen, Abgebrochen, Fehler). Der Helper braucht
+    genau diese Optionen (zusätzlich z. B. Unbekannt, Bereit).
+
+
+    **Ausschalten:** Die Steckdose geht aus, wenn der Drucker nach einem
+    **abgeschlossenen** Druck die eingestellte Zeit im Standby bleibt – auch nach
+    kurzen Unavailable-Phasen. Bei Testläufen (Standby ohne vorherigen Abschluss)
+    passiert nichts. Das Ausschalten läuft mit `retry.action`.
+
+
+    **Absicherung:** Alle 15 Minuten wird derselbe Zustand noch einmal geprüft,
+    weil Reloads den `for`-Timer des Standby-Triggers löschen.
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  input:
+    print_state_sensor:
+      name: Druckstatus-Sensor
+      description: Moonraker-Sensor „Current Print State“ (standby, printing, paused, complete, cancelled, error).
+      selector:
+        entity:
+          domain: sensor
+    status_helper:
+      name: Status-Helper
+      description: >
+        `input_select` mit den Optionen Druckt, Pausiert, Abgeschlossen,
+        Abgebrochen, Fehler.
+      selector:
+        entity:
+          domain: input_select
+    power_switch:
+      name: Steckdose
+      description: Schalter, der ausgeschaltet wird.
+      selector:
+        entity:
+          domain: switch
+    standby_delay:
+      name: Standby-Dauer vor dem Ausschalten
+      default:
+        hours: 1
+        minutes: 0
+        seconds: 0
+      selector:
+        duration:
+    retries:
+      name: Wiederholungen beim Ausschalten
+      default: 20
+      selector:
+        number:
+          min: 1
+          max: 60
+          mode: box
+    state_grace:
+      name: Wartezeit auf den Zielzustand (Sekunden)
+      default: 90
+      selector:
+        number:
+          min: 5
+          max: 600
+          unit_of_measurement: s
+          mode: box
+
+mode: single
+
+triggers:
+  - alias: "Sensor: Druck abgeschlossen"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: complete
+    id: complete
+  - alias: "Sensor: Druck gestartet"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: printing
+    id: printing
+  - alias: "Sensor: Druck pausiert"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: paused
+    id: paused
+  - alias: "Sensor: Druck abgebrochen"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: cancelled
+    id: cancelled
+  - alias: "Sensor: Fehler"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: error
+    id: error
+  - alias: "Sensor: Standby seit Wartezeit"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: standby
+    for: !input standby_delay
+    from:
+      - cancelled
+      - standby
+      - complete
+      - error
+      - paused
+      - printing
+    id: standby_lange
+  - alias: "Alle 15 min: Absicherung gegen Reload"
+    trigger: time_pattern
+    minutes: "/15"
+    id: standby_poll
+
+conditions: []
+
+actions:
+  - choose:
+      - alias: "Status setzen: Abgeschlossen"
+        conditions:
+          - condition: trigger
+            id: complete
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: !input status_helper
+            data:
+              option: Abgeschlossen
+      - alias: "Status setzen: Druckt"
+        conditions:
+          - condition: trigger
+            id: printing
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: !input status_helper
+            data:
+              option: Druckt
+      - alias: "Status setzen: Pausiert"
+        conditions:
+          - condition: trigger
+            id: paused
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: !input status_helper
+            data:
+              option: Pausiert
+      - alias: "Status setzen: Abgebrochen"
+        conditions:
+          - condition: trigger
+            id: cancelled
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: !input status_helper
+            data:
+              option: Abgebrochen
+      - alias: "Status setzen: Fehler"
+        conditions:
+          - condition: trigger
+            id: error
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: !input status_helper
+            data:
+              option: Fehler
+      - alias: "Standby nach Abschluss: Steckdose ausschalten"
+        conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: standby_lange
+              - condition: trigger
+                id: standby_poll
+          - condition: state
+            entity_id: !input status_helper
+            state: Abgeschlossen
+          - condition: state
+            entity_id: !input print_state_sensor
+            state: standby
+            for: !input standby_delay
+          - condition: state
+            entity_id: !input power_switch
+            state: "on"
+        sequence:
+          - alias: "Steckdose ausschalten (mit Retry)"
+            action: retry.action
+            metadata: {}
+            data:
+              action: switch.turn_off
+              retries: !input retries
+              expected_state:
+                - "off"
+              state_grace: !input state_grace
+            target:
+              entity_id: !input power_switch
