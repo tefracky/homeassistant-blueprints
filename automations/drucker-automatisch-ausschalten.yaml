@@ -4,7 +4,7 @@ blueprint:
   description: >
     # 🖨️ Drucker automatisch ausschalten
 
-    **Version 1.0**
+    **Version 1.1**
 
 
     Für Moonraker-Drucker (Sensor „Current Print State“) an einer schaltbaren
@@ -20,6 +20,12 @@ blueprint:
     **abgeschlossenen** Druck die eingestellte Zeit im Standby bleibt – auch nach
     kurzen Unavailable-Phasen. Bei Testläufen (Standby ohne vorherigen Abschluss)
     passiert nichts. Das Ausschalten läuft mit `retry.action`.
+
+
+    **Drucker schaltet sich selbst ab:** Geht der Sensor nach einem
+    abgeschlossenen Druck auf „unavailable“ (Pi/Drucker ist von selbst
+    heruntergefahren, die Steckdose blieb an), gilt dieselbe Wartezeit –
+    danach wird die Steckdose ebenfalls ausgeschaltet (v1.1, 28.11.2026).
 
 
     **Absicherung:** Alle 15 Minuten wird derselbe Zustand noch einmal geprüft,
@@ -115,6 +121,12 @@ triggers:
       - paused
       - printing
     id: standby_lange
+  - alias: "Sensor: nicht erreichbar seit Wartezeit (Drucker von selbst aus)"
+    trigger: state
+    entity_id: !input print_state_sensor
+    to: unavailable
+    for: !input standby_delay
+    id: standby_lange
   - alias: "Alle 15 min: Absicherung gegen Reload"
     trigger: time_pattern
     minutes: "/15"
@@ -185,10 +197,17 @@ actions:
           - condition: state
             entity_id: !input status_helper
             state: Abgeschlossen
-          - condition: state
-            entity_id: !input print_state_sensor
-            state: standby
-            for: !input standby_delay
+          - alias: "Sensor lange im Standby ODER lange nicht erreichbar"
+            condition: or
+            conditions:
+              - condition: state
+                entity_id: !input print_state_sensor
+                state: standby
+                for: !input standby_delay
+              - condition: state
+                entity_id: !input print_state_sensor
+                state: unavailable
+                for: !input standby_delay
           - condition: state
             entity_id: !input power_switch
             state: "on"
